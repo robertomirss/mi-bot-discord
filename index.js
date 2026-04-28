@@ -22,11 +22,13 @@ app.get("/", (req, res) => {
 
 app.listen(process.env.PORT || 3000);
 
+// 🔐 TOKEN CHECK
 if (!process.env.DISCORD_TOKEN) {
     console.error("❌ Falta DISCORD_TOKEN");
     process.exit(1);
 }
 
+// 🤖 CLIENTE
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -35,7 +37,7 @@ const client = new Client({
     ]
 });
 
-// 🎯 ID del usuario objetivo
+// 🎯 USUARIO OBJETIVO
 const TARGET_USER_ID = "873180047463292988";
 
 let connection;
@@ -55,7 +57,7 @@ client.login(process.env.DISCORD_TOKEN)
         process.exit(1);
     });
 
-// 🎧 DETECCIÓN DE VOZ
+// 🎧 DETECCIÓN DE ENTRADA / CAMBIO DE CANAL
 client.on('voiceStateUpdate', async (oldState, newState) => {
 
     if (!newState.member || newState.member.user.bot) return;
@@ -100,7 +102,7 @@ async function joinAndPlay(channel) {
     }
 }
 
-// 🎵 REPRODUCIR AUDIO
+// 🎵 REPRODUCCIÓN
 function playAudio() {
 
     if (isPlaying) return;
@@ -123,53 +125,31 @@ function playAudio() {
     player.play(resource);
 }
 
-// 🔁 FIN DE AUDIO
-player.on(AudioPlayerStatus.Idle, () => {
-    isPlaying = false;
-});
-
-// ❌ ERRORES PLAYER
+// ❌ ERRORES
 player.on('error', (error) => {
     console.error("❌ Player error:", error);
     isPlaying = false;
     player.stop(true);
 });
 
+// 🎵 CUANDO TERMINA LA CANCIÓN → DESCONEXIÓN (NUEVO MEJORADO)
+player.on(AudioPlayerStatus.Idle, () => {
 
-// 🚪 AUTO-DESCONEXIÓN (NUEVO BLOQUE AÑADIDO)
-let leaveTimeout = null;
+    console.log("🎵 Canción terminada");
 
-client.on('voiceStateUpdate', async (oldState, newState) => {
+    isPlaying = false;
 
-    const channel = oldState.channel || newState.channel;
-    if (!channel) return;
+    setTimeout(() => {
 
-    // cancelar si hay actividad
-    if (leaveTimeout) {
-        clearTimeout(leaveTimeout);
-        leaveTimeout = null;
-    }
-
-    leaveTimeout = setTimeout(() => {
-
-        const humans = channel.members.filter(m => !m.user.bot);
-
-        if (humans.size === 0) {
-
-            console.log("🚪 Canal vacío → desconectando bot");
-
-            try {
-                if (connection) {
-                    connection.destroy();
-                    connection = null;
-                }
-
-                isPlaying = false;
-
-            } catch (err) {
-                console.error("Error al desconectar:", err);
+        try {
+            if (connection) {
+                console.log("🚪 Desconectando bot al terminar audio");
+                connection.destroy();
+                connection = null;
             }
+        } catch (err) {
+            console.error("Error al desconectar:", err);
         }
 
-    }, 15000); // 15s de espera
+    }, 2000); // pequeño delay de seguridad
 });
