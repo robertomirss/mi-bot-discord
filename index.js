@@ -13,7 +13,6 @@ const {
 const path = require('path');
 const fs = require('fs');
 
-// 🌐 SERVIDOR (Render / uptime)
 const express = require("express");
 const app = express();
 
@@ -23,13 +22,11 @@ app.get("/", (req, res) => {
 
 app.listen(process.env.PORT || 3000);
 
-// 🔐 TOKEN CHECK
 if (!process.env.DISCORD_TOKEN) {
-    console.error("❌ Falta DISCORD_TOKEN en variables de entorno");
+    console.error("❌ Falta DISCORD_TOKEN");
     process.exit(1);
 }
 
-// 🤖 CLIENTE DISCORD
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -38,18 +35,17 @@ const client = new Client({
     ]
 });
 
-// 🎯 USUARIO OBJETIVO
+// 🎯 ID del usuario objetivo
 const TARGET_USER_ID = "873180047463292988";
 
-// 🎧 AUDIO PLAYER
 let connection;
+let isPlaying = false;
+
 const player = createAudioPlayer({
     behaviors: {
         noSubscriber: 'pause'
     }
 });
-
-let isPlaying = false;
 
 // 🔐 LOGIN
 client.login(process.env.DISCORD_TOKEN)
@@ -59,24 +55,24 @@ client.login(process.env.DISCORD_TOKEN)
         process.exit(1);
     });
 
-// 🧠 DETECCIÓN DE VOZ
+// 🎧 DETECCIÓN DE VOZ
 client.on('voiceStateUpdate', async (oldState, newState) => {
 
     if (!newState.member || newState.member.user.bot) return;
 
     const joined =
-        !oldState.channel &&
         newState.channel &&
-        newState.member.id === TARGET_USER_ID;
+        newState.member.id === TARGET_USER_ID &&
+        (!oldState.channel || oldState.channel.id !== newState.channel.id);
 
     if (!joined) return;
 
     console.log(`🧨 Usuario detectado en: ${newState.channel.name}`);
 
-    await joinAndPlay(newState.channel);
+    joinAndPlay(newState.channel);
 });
 
-// 🔌 CONECTAR A VOZ
+// 🔌 CONECTAR Y REPRODUCIR
 async function joinAndPlay(channel) {
 
     try {
@@ -104,7 +100,7 @@ async function joinAndPlay(channel) {
     }
 }
 
-// 🎵 REPRODUCCIÓN DE AUDIO
+// 🎵 REPRODUCIR AUDIO
 function playAudio() {
 
     if (isPlaying) return;
@@ -112,27 +108,19 @@ function playAudio() {
 
     const file = path.resolve("./hava_nagila.mp3");
 
-    console.log("🎧 Archivo usado:", file);
-
     if (!fs.existsSync(file)) {
-        console.error("❌ No se encontró hava_nagila.mp3");
+        console.error("❌ No existe el audio");
         isPlaying = false;
         return;
     }
 
-    try {
-        console.log("🔊 REPRODUCIENDO HAVA NAGILA 🔥");
+    console.log("🔊 REPRODUCIENDO HAVA NAGILA");
 
-        player.stop(true);
+    player.stop(true);
 
-        const resource = createAudioResource(file);
+    const resource = createAudioResource(file);
 
-        player.play(resource);
-
-    } catch (err) {
-        console.error("❌ Error audio:", err);
-        isPlaying = false;
-    }
+    player.play(resource);
 }
 
 // 🔁 FIN DE AUDIO
@@ -140,9 +128,48 @@ player.on(AudioPlayerStatus.Idle, () => {
     isPlaying = false;
 });
 
-// ❌ ERRORES
+// ❌ ERRORES PLAYER
 player.on('error', (error) => {
     console.error("❌ Player error:", error);
     isPlaying = false;
     player.stop(true);
+});
+
+
+// 🚪 AUTO-DESCONEXIÓN (NUEVO BLOQUE AÑADIDO)
+let leaveTimeout = null;
+
+client.on('voiceStateUpdate', async (oldState, newState) => {
+
+    const channel = oldState.channel || newState.channel;
+    if (!channel) return;
+
+    // cancelar si hay actividad
+    if (leaveTimeout) {
+        clearTimeout(leaveTimeout);
+        leaveTimeout = null;
+    }
+
+    leaveTimeout = setTimeout(() => {
+
+        const humans = channel.members.filter(m => !m.user.bot);
+
+        if (humans.size === 0) {
+
+            console.log("🚪 Canal vacío → desconectando bot");
+
+            try {
+                if (connection) {
+                    connection.destroy();
+                    connection = null;
+                }
+
+                isPlaying = false;
+
+            } catch (err) {
+                console.error("Error al desconectar:", err);
+            }
+        }
+
+    }, 15000); // 15s de espera
 });
