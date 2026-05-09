@@ -108,7 +108,8 @@ function playAudio() {
     if (isPlaying) return;
     isPlaying = true;
 
-    const file = path.resolve("./hava_nagila.mp3");
+    // 🔥 NUEVO AUDIO
+    const file = path.resolve("./dobby.mp3");
 
     if (!fs.existsSync(file)) {
         console.error("❌ No existe el audio");
@@ -116,7 +117,7 @@ function playAudio() {
         return;
     }
 
-    console.log("🔊 REPRODUCIENDO HAVA NAGILA");
+    console.log("🔊 REPRODUCIENDO DOBBY");
 
     player.stop(true);
 
@@ -132,10 +133,10 @@ player.on('error', (error) => {
     player.stop(true);
 });
 
-// 🎵 CUANDO TERMINA LA CANCIÓN → DESCONEXIÓN (NUEVO MEJORADO)
+// 🎵 CUANDO TERMINA → DESCONECTAR
 player.on(AudioPlayerStatus.Idle, () => {
 
-    console.log("🎵 Canción terminada");
+    console.log("🎵 Audio terminado");
 
     isPlaying = false;
 
@@ -143,7 +144,7 @@ player.on(AudioPlayerStatus.Idle, () => {
 
         try {
             if (connection) {
-                console.log("🚪 Desconectando bot al terminar audio");
+                console.log("🚪 Desconectando bot");
                 connection.destroy();
                 connection = null;
             }
@@ -151,5 +152,5 @@ player.on(AudioPlayerStatus.Idle, () => {
             console.error("Error al desconectar:", err);
         }
 
-    }, 2000); // pequeño delay de seguridad
+    }, 2000);
 });
