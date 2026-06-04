@@ -38,7 +38,7 @@ const client = new Client({
 });
 
 // 🎯 USUARIO OBJETIVO
-const TARGET_USER_ID = "924067776023380069";
+const TARGET_USER_ID = "1383792280229646358";
 
 let connection;
 let isPlaying = false;
@@ -109,7 +109,7 @@ function playAudio() {
     isPlaying = true;
 
     // 🔥 NUEVO AUDIO
-    const file = path.resolve("./dobby.mp3");
+    const SONG = "./Lorzas de Eric.mp3";
 
     if (!fs.existsSync(file)) {
         console.error("❌ No existe el audio");
