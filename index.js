@@ -109,7 +109,7 @@ function playAudio() {
     isPlaying = true;
 
     // 🔥 NUEVO AUDIO
-    const SONG = "./Lorzas de Eric.mp3";
+    const SONG = "./assets/lorzas_de_eric.mp3";
 
     if (!fs.existsSync(SONG)) {
         console.error("❌ No existe el audio");
