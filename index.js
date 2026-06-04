@@ -121,7 +121,7 @@ function playAudio() {
 
     player.stop(true);
 
-    const resource = createAudioResource(file);
+    const resource = createAudioResource(SONG);
 
     player.play(resource);
 }
