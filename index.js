@@ -111,7 +111,7 @@ function playAudio() {
     // 🔥 NUEVO AUDIO
     const SONG = "./Lorzas de Eric.mp3";
 
-    if (!fs.existsSync(file)) {
+    if (!fs.existsSync(SONG)) {
         console.error("❌ No existe el audio");
         isPlaying = false;
         return;
