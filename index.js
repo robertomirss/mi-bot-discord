@@ -38,7 +38,7 @@ const client = new Client({
 });
 
 // 🎯 USUARIO OBJETIVO
-const TARGET_USER_ID = "1383792280229646358";
+const TARGET_USER_ID = "1412380319440437401";
 
 let connection;
 let isPlaying = false;
